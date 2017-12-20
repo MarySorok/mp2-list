@@ -24,26 +24,30 @@ List::~List()
 }
   List::List(const List& list2)
   {
-	  if (list2.head == NULL)
+	  if (list2.head != NULL)
 	  {
-		  head = list2.head;
+		head = new Node (list2.head->data,list2.head->next);
+		Node *tmp = head;
+		Node *tmp2 = list2.head->next;
+		while (tmp2 != NULL)
+		{
+			tmp->next = new Node(tmp2->data, tmp2->next);
+			tmp = tmp->next;
+			tmp2 = tmp2->next;
+		}
 	  }
 	  else
-	  {
-		  Node* tmp1 = head, *tmp2 = list2.head;
-		  while (tmp2 != NULL)
-		  {
-			  tmp1 = new Node(tmp2->data, tmp2->next);
-			  tmp1 = tmp1->next;
-			  tmp2 = tmp2->next;
-		  }
-	  }
+		  head = NULL;
  }
    Node& Node::operator=(const Node& node2)
    {
-	   data = node2.data;
-	   next = node2.next;
+	   if(this!=&node2)
+	   {
+		   data = node2.data;
+		   next = node2.next;
+	   }
 	   return *this;
+	   
    }
    bool Node::operator==(const Node& node2) const
    {
@@ -54,35 +58,37 @@ List::~List()
    bool List::operator==(const List& list2) const
    {
 	   Node *tmp1 = head, *tmp2 = list2.head;
-	   while (tmp1 != NULL)
+	   bool f = true;
+	   while (tmp1 && tmp2 && f)
 	   {
 		   if (tmp1->data != tmp2->data)
 			   return false;
 		   tmp1 = tmp1->next;
 		   tmp2 = tmp2->next;
 	   }
-	   if (tmp2 != NULL)
+	   if (tmp1 || tmp2)
 		   return false;
-	   return true;
+	   return f;
 
    }
    List& List::operator=(const List& list2)
    {
 	   if (this != &list2)
 	   {
+		   Clean();
 		   if (list2.head == NULL)
 		   {
-			   head = list2.head;
-			   return *this;
+			   head = NULL;
 		   }
 		   else
 		   {
-			   this->Clean();
-			   Node* tmp1 = head, *tmp2 = list2.head;
+			   head = new Node (list2.head->data,list2.head->next);
+			   Node *tmp = head;
+			   Node *tmp2 = list2.head->next;
 			   while (tmp2 != NULL)
 			   {
-				   tmp1 = new Node(tmp2->data, tmp2->next);
-				   tmp1 = tmp1->next;
+				   tmp->next = new Node(tmp2->data, tmp2->next);
+				   tmp = tmp->next;
 				   tmp2 = tmp2->next;
 			   }
 		   }
@@ -113,30 +119,37 @@ List::~List()
   {
 	  if (head == NULL)
 		  throw "Can't insert to empty list.";
-	  Node*tmp = head, *n;
+	  if (node!=NULL)
+	  {
+		
+	  Node*tmp = head;
 	  while (tmp!=node)
 	  {
 		  tmp=tmp->next;
 	  }
-	  n = tmp->next;
-	  tmp->next = new Node(d,n);
+	  tmp->next = new Node(d,tmp->next);
+	  }
 
   } 
   void List::Delete(const DataType& d)
   {
 	  Node* tmp = head, *prev=NULL;
-	  if (tmp == NULL)
-		  return;
+	  if (tmp != NULL)
+	  {
 	  while ((tmp != NULL)&&(tmp->data!=d))
 	  {
 		  prev = tmp;
 		  tmp = tmp->next;
 	  }
+	  if(tmp!=NULL)
+	  {
 		  if(prev!=NULL)
 			  prev->next = tmp->next; 
 		  else 
 			  head = tmp->next; 
 		  delete tmp;
+	  }
+	  }
 	  
   }
   Node* List::Search(const DataType& d)
@@ -196,36 +209,72 @@ List::~List()
   }
   List List::Merge(Node* node, const List& list2)
   {
-	  if (head == NULL)
-		  return list2;
-	  List list3 = *this;
-	  Node*tmp = list3.head, *n, *tmp2 = list2.head;
-	  while (tmp != node)
+	  if (head != NULL)
 	  {
-		  tmp = tmp->next;
+		  List list3;
+		  list3.head = new Node(head->data, NULL);
+		  Node* tmp = list3.head;
+		  Node* tmp1 = head;
+		  
+		  while ((tmp1->next!=NULL) && (tmp1 != node))
+		  {
+			  tmp->next = new Node(tmp1->next->data, NULL);
+			  tmp = tmp->next;
+			  tmp1 = tmp1->next;
+		  }
+		  if (node != NULL)
+		  {
+			  Node* tmp2 = list2.head;
+			  while (tmp2 != NULL)
+			  {
+				  tmp->next = new Node(tmp2->data,NULL);
+				  tmp = tmp->next;
+				  tmp2 = tmp2->next;
+			  }
+			  while (tmp1->next!=NULL)
+			  {
+				  tmp->next = new Node(tmp1->next->data, NULL);
+				  tmp = tmp->next;
+				  tmp1 = tmp1->next;
+			  }
+		  }
+		  return list3;
 	  }
-	  n = tmp->next;
-	  while (tmp2 != NULL)
+	  else
 	  {
-		  tmp->next = new Node(tmp2->data, tmp2->next);
-		  tmp = tmp->next;
-		  tmp2 = tmp2->next;
+		  List l3(list2);
+		  return l3;
 	  }
-	  tmp->next = n;
-	  return list3;
+	  
   }  
   List List::Merge(const List& list2)
   {
-	  if (head == NULL)
-		  return list2;
-	  List list3 = *this;
-	  Node* tmp = list3.head;
-	  while (tmp->next!= NULL)
+	  if (head != NULL)
 	  {
+		  if (list2.head == NULL)
+			  return *this;
+		  List list3(*this);
+		  Node* tmp = list3.head, *tmp2 = list2.head;
+		  while (tmp->next != NULL)
+		  {
+			  tmp = tmp->next;
+		  }
+		  tmp->next = new Node(list2.head->data,NULL);
 		  tmp = tmp->next;
+		  tmp2 = tmp2->next;
+		  while (tmp2)
+		  {
+			  tmp->next = new Node(tmp2->data, NULL);
+			  tmp = tmp->next;
+			  tmp2 = tmp2->next;
+		  }
+		  return list3;
 	  }
-	  tmp->next = list2.head;
-	  return list3;
+	  else
+	  {
+		  List l3(list2);
+		  return l3;
+	  }
   }
   ostream& operator<<(ostream& os, const List& l)
   {
