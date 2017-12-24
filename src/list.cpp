@@ -205,6 +205,7 @@ List::~List()
 		  head2 = new Node(tmp->data, head2);
 		  tmp = tmp->next;
 	  }
+	  Clean();
 	  head = head2;
   }
   List List::Merge(Node* node, const List& list2)
